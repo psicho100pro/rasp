@@ -84,3 +84,24 @@ EOF'
 
 sudo systemctl enable --now watchdog
 sudo systemctl enable --now fstrim.timer
+
+sudo mkdir -p /var/log/journal
+sudo chown root:systemd-journal /var/log/journal
+sudo chmod 2755 /var/log/journal
+sudo mkdir -p /etc/systemd/journald.conf.d
+echo -e "[Journal]\nStorage=persistent\nSystemMaxUse=100M" | sudo tee /etc/systemd/journald.conf.d/99-custom-persistent.conf
+sudo systemctl restart systemd-journald
+
+sudo journalctl --flush
+
+
+sudo apt update && sudo apt install zram-tools -y
+sudo bash -c 'cat << EOF > /etc/default/zramswap
+ALGO=lz4
+SIZE=400
+PRIORITY=100
+EOF'
+sudo systemctl restart zramswap
+
+sudo bash -c 'echo "vm.swappiness=60" > /etc/sysctl.d/99-swappiness.conf'
+sudo sysctl --system
